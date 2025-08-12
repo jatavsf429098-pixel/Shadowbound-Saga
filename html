@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>महाभारत: धर्मयुद्ध</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Noto Sans', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #gameContainer {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* एड्स के लिए कंटेनर */
+        #adContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            font-size: 14px;
+            color: #ffcc00;
+            border-bottom: 2px solid #ffcc00;
+        }
+        
+        #adText {
+            animation: blink 2s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* हेडर */
+        #header {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            text-align: center;
+            border-bottom: 2px solid #ffcc00;
+        }
+        
+        #gameTitle {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            margin-bottom: 5px;
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 16px;
+        }
+        
+        .statBox {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px 10px;
+            border-radius: 10px;
+            border: 1px solid #ffcc00;
+        }
+        
+        /* मुख्य गेम कंटेनर */
+        #mainGame {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #gameArea {
+            flex: 1;
+            position: relative;
+            background: linear-gradient(to bottom, #1a2a6c, #0d1b3a);
+            overflow: hidden;
+        }
+        
+        /* पात्र और वस्तुएं */
+        .character {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transition: transform 0.1s;
+        }
+        
+        #player {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="40" r="20" fill="%234CAF50"/><rect x="30" y="60" width="40" height="30" fill="%232196F3"/><polygon points="20,60 80,60 50,90" fill="%23FF5722"/></svg>');
+            z-index: 10;
+        }
+        
+        .enemy {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="40" r="20" fill="%23F44336"/><rect x="30" y="60" width="40" height="30" fill="%239C27B0"/><polygon points="20,60 80,60 50,90" fill="%23FF9800"/></svg>');
+        }
+        
+        .powerup {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="30" fill="%23FFEB3B"/><polygon points="50,20 60,40 85,40 65,55 75,80 50,65 25,80 35,55 15,40 40,40" fill="%23FFC107"/></svg>');
+        }
+        
+        .coin {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%23FFD700"/><circle cx="50" cy="50" r="30" fill="%23FFA500"/><text x="50" y="60" font-family="Arial" font-size="40" fill="white" text-anchor="middle">₹</text></svg>');
+        }
+        
+        /* कंट्रोल्स */
+        #controls {
+            height: 120px;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 10px;
+            border-top: 2px solid #ffcc00;
+        }
+        
+        .controlBtn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid #ffcc00;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #ffcc00;
+            font-weight: bold;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        
+        .controlBtn:active {
+            background: rgba(255, 204, 0, 0.3);
+            transform: scale(0.95);
+        }
+        
+        #attackBtn {
+            background: rgba(255, 0, 0, 0.3);
+            border-color: #ff5252;
+            color: #ff5252;
+        }
+        
+        /* स्क्रीन्स */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 50;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .screenTitle {
+            font-size: 28px;
+            color: #ffcc00;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+        }
+        
+        .screenText {
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            max-width: 90%;
+        }
+        
+        .btn {
+            background: linear-gradient(to right, #ffcc00, #ff9800);
+            color: #1a2a6c;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+        
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        #storyText {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #ffcc00;
+            margin: 20px 0;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        /* एनिमेशन्स */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        /* रिस्पॉन्सिव डिज़ाइन */
+        @media (max-width: 480px) {
+            #gameTitle {
+                font-size: 20px;
+            }
+            
+            .screenTitle {
+                font-size: 24px;
+            }
+            
+            .screenText {
+                font-size: 16px;
+            }
+            
+            .controlBtn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- विज्ञापन कंटेनर -->
+        <div id="adContainer">
+            <div id="adText">★ विज्ञापन: इस गेम को समर्थित करें! ★</div>
+        </div>
+        
+        <!-- हेडर -->
+        <div id="header">
+            <div id="gameTitle">महाभारत: धर्मयुद्ध</div>
+            <div id="stats">
+                <div class="statBox">स्कोर: <span id="score">0</span></div>
+                <div class="statBox">जीवन: <span id="health">100</span>%</div>
+                <div class="statBox">सिक्के: <span id="coins">0</span></div>
+            </div>
+        </div>
+        
+        <!-- मुख्य गेम क्षेत्र -->
+        <div id="mainGame">
+            <div id="gameArea">
+                <!-- पात्र और वस्तुएं यहाँ डायनेमिकली जोड़ी जाएंगी -->
+                <div id="player" class="character floating" style="left: 50%; top: 80%;"></div>
+            </div>
+            
+            <!-- कंट्रोल्स -->
+            <div id="controls">
+                <div class="controlBtn" id="leftBtn">←</div>
+                <div class="controlBtn" id="attackBtn">⚔️</div>
+                <div class="controlBtn" id="rightBtn">→</div>
+            </div>
+        </div>
+        
+        <!-- स्टार्ट स्क्रीन -->
+        <div id="startScreen" class="screen">
+            <h1 class="screenTitle">महाभारत: धर्मयुद्ध</h1>
+            <div id="storyText">
+                कुरुक्षेत्र में धर्मयुद्ध शुरू हो गया है! आप अर्जुन हैं और आपको दुर्योधन की सेना का सामना करना है। 
+                अपने शस्त्रों का उपयोग करें, पावर-अप्स इकट्ठा करें और अपने दुश्मनों को हराएं!
+            </div>
+            <button id="startBtn" class="btn">युद्ध शुरू करें</button>
+        </div>
+        
+        <!-- गेम ओवर स्क्रीन -->
+        <div id="gameOverScreen" class="screen hidden">
+            <h1 class="screenTitle">युद्ध समाप्त!</h1>
+            <div class="screenText">
+                आपका युद्ध समाप्त हो गया।<br>
+                अंतिम स्कोर: <span id="finalScore">0</span><br>
+                इकट्ठा किए सिक्के: <span id="finalCoins">0</span>
+            </div>
+            <button id="restartBtn" class="btn">फिर से खेलें</button>
+        </div>
+    </div>
+
+    <script>
+        // गेम वेरिएबल्स
+        let score = 0;
+        let health = 100;
+        let coins = 0;
+        let gameActive = false;
+        let playerPosition = 50;
+        let gameSpeed = 2;
+        let enemySpawnRate = 1000; // मिलीसेकंड्स
+        let powerupSpawnRate = 3000;
+        let coinSpawnRate = 2000;
+        let gameLoop;
+        let enemyInterval;
+        let powerupInterval;
+        let coinInterval;
+        
+        // DOM एलिमेंट्स
+        const player = document.getElementById('player');
+        const gameArea = document.getElementById('gameArea');
+        const scoreElement = document.getElementById('score');
+        const healthElement = document.getElementById('health');
+        const coinsElement = document.getElementById('coins');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreElement = document.getElementById('finalScore');
+        const finalCoinsElement = document.getElementById('finalCoins');
+        const adText = document.getElementById('adText');
+        
+        // एड्स के लिए टेक्स्ट एरे
+        const adMessages = [
+            "★ नया गेम डाउनलोड करें! ★",
+            "★ प्रीमियम संस्करण खरीदें! ★",
+            "★ विशेष पावर-अप्स पाएं! ★",
+            "★ अधिक स्तर अनलॉक करें! ★",
+            "★ अपने दोस्तों के साथ प्रतिस्पर्धा करें! ★"
+        ];
+        
+        // एड्स टेक्स्ट चेंज करना
+        let adIndex = 0;
+        setInterval(() => {
+            adIndex = (adIndex + 1) % adMessages.length;
+            adText.textContent = adMessages[adIndex];
+        }, 3000);
+        
+        // गेम शुरू करना
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        
+        // कंट्रोल्स
+        document.getElementById('leftBtn').addEventListener('touchstart', moveLeft);
+        document.getElementById('rightBtn').addEventListener('touchstart', moveRight);
+        document.getElementById('attackBtn').addEventListener('touchstart', attack);
+        
+        // कीबोर्ड कंट्रोल्स (टेस्टिंग के लिए)
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    moveLeft();
+                    break;
+                case 'ArrowRight':
+                    moveRight();
+                    break;
+                case ' ':
+                    attack();
+                    break;
+            }
+        });
+        
+        function startGame() {
+            // रिसेट वैल्यूज़
+            score = 0;
+            health = 100;
+            coins = 0;
+            playerPosition = 50;
+            gameSpeed = 2;
+            
+            // UI अपडेट
+            updateUI();
+            
+            // स्क्रीन्स टॉगल
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            
+            // प्लेयर पोजीशन रिसेट
+            player.style.left = '50%';
+            
+            // मौजूदा एनिमीज़ और पावर-अप्स हटाएं
+            document.querySelectorAll('.enemy, .powerup, .coin').forEach(el => el.remove());
+            
+            // गेम एक्टिव करें
+            gameActive = true;
+            
+            // गेम लूप शुरू करें
+            if (gameLoop) cancelAnimationFrame(gameLoop);
+            gameLoopFunction();
+            
+            // एनिमीज़, पावर-अप्स और सिक्के स्पॉन करना
+            clearInterval(enemyInterval);
+            clearInterval(powerupInterval);
+            clearInterval(coinInterval);
+            
+            enemyInterval = setInterval(spawnEnemy, enemySpawnRate);
+            powerupInterval = setInterval(spawnPowerup, powerupSpawnRate);
+            coinInterval = setInterval(spawnCoin, coinSpawnRate);
+        }
+        
+        function gameLoopFunction() {
+            if (!gameActive) return;
+            
+            // एनिमीज़ को मूव करें
+            moveEnemies();
+            
+            // पावर-अप्स को मूव करें
+            movePowerups();
+            
+            // सिक्कों को मूव करें
+            moveCoins();
+            
+            // कॉलिशन चेक करें
+            checkCollisions();
+            
+            // गेम स्पीड बढ़ाएं
+            if (score > 0 && score % 100 === 0) {
+                gameSpeed += 0.1;
+            }
+            
+            gameLoop = requestAnimationFrame(gameLoopFunction);
+        }
+        
+        function moveLeft() {
+            if (!gameActive) return;
+            playerPosition = Math.max(5, playerPosition - 5);
+            player.style.left = `${playerPosition}%`;
+        }
+        
+        function moveRight() {
+            if (!gameActive) return;
+            playerPosition = Math.min(95, playerPosition + 5);
+            player.style.left = `${playerPosition}%`;
+        }
+        
+        function attack() {
+            if (!gameActive) return;
+            
+            // हमला एनिमेशन
+            player.classList.add('pulsing');
+            setTimeout(() => player.classList.remove('pulsing'), 200);
+            
+            // एनिमीज़ को हटाएं जो प्लेयर के पास हैं
+            document.querySelectorAll('.enemy').forEach(enemy => {
+                const enemyRect = enemy.getBoundingClientRect();
+                const playerRect = player.getBoundingClientRect();
+                
+                // सरल दूरी चेक
+                const distance = Math.abs(enemyRect.left - playerRect.left);
+                if (distance < 100) {
+                    enemy.remove();
+                    score += 10;
+                    updateUI();
+                }
+            });
+        }
+        
+        function spawnEnemy() {
+            if (!gameActive) return;
+            
+            const enemy = document.createElement('div');
+            enemy.className = 'character enemy floating';
+            enemy.style.left = `${Math.random() * 90 + 5}%`;
+            enemy.style.top = '-60px';
+            gameArea.appendChild(enemy);
+        }
+        
+        function spawnPowerup() {
+            if (!gameActive) return;
+            
+            const powerup = document.createElement('div');
+            powerup.className = 'character powerup pulsing';
+            powerup.style.left = `${Math.random() * 90 + 5}%`;
+            powerup.style.top = '-60px';
+            gameArea.appendChild(powerup);
+        }
+        
+        function spawnCoin() {
+            if (!gameActive) return;
+            
+            const coin = document.createElement('div');
+            coin.className = 'character coin';
+            coin.style.left = `${Math.random() * 90 + 5}%`;
+            coin.style.top = '-60px';
+            gameArea.appendChild(coin);
+        }
+        
+        function moveEnemies() {
+            document.querySelectorAll('.enemy').forEach(enemy => {
+                const top = parseInt(enemy.style.top || '0');
+                enemy.style.top = `${top + gameSpeed}px`;
+                
+                // एनिमी हटाएं अगर वो स्क्रीन से बाहर चले गए
+                if (top > window.innerHeight) {
+                    enemy.remove();
+                }
+            });
+        }
+        
+        function movePowerups() {
+            document.querySelectorAll('.powerup').forEach(powerup => {
+                const top = parseInt(powerup.style.top || '0');
+                powerup.style.top = `${top + gameSpeed}px`;
+                
+                // पावर-अप हटाएं अगर वो स्क्रीन से बाहर चले गए
+                if (top > window.innerHeight) {
+                    powerup.remove();
+                }
+            });
+        }
+        
+        function moveCoins() {
+            document.querySelectorAll('.coin').forEach(coin => {
+                const top = parseInt(coin.style.top || '0');
+                coin.style.top = `${top + gameSpeed}px`;
+                
+                // सिक्का हटाएं अगर वो स्क्रीन से बाहर चले गए
+                if (top > window.innerHeight) {
+                    coin.remove();
+                }
+            });
+        }
+        
+        function checkCollisions() {
+            const playerRect = player.getBoundingClientRect();
+            
+            // एनिमी कॉलिशन
+            document.querySelectorAll('.enemy').forEach(enemy => {
+                const enemyRect = enemy.getBoundingClientRect();
+                
+                if (isColliding(playerRect, enemyRect)) {
+                    enemy.remove();
+                    health -= 10;
+                    updateUI();
+                    
+                    if (health <= 0) {
+                        gameOver();
+                    }
+                }
+            });
+            
+            // पावर-अप कॉलिशन
+            document.querySelectorAll('.powerup').forEach(powerup => {
+                const powerupRect = powerup.getBoundingClientRect();
+                
+                if (isColliding(playerRect, powerupRect)) {
+                    powerup.remove();
+                    health = Math.min(100, health + 20);
+                    score += 20;
+                    updateUI();
+                }
+            });
+            
+            // सिक्का कॉलिशन
+            document.querySelectorAll('.coin').forEach(coin => {
+                const coinRect = coin.getBoundingClientRect();
+                
+                if (isColliding(playerRect, coinRect)) {
+                    coin.remove();
+                    coins += 1;
+                    score += 5;
+                    updateUI();
+                }
+            });
+        }
+        
+        function isColliding(rect1, rect2) {
+            return !(
+                rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom
+            );
+        }
+        
+        function updateUI() {
+            scoreElement.textContent = score;
+            healthElement.textContent = health;
+            coinsElement.textContent = coins;
+        }
+        
+        function gameOver() {
+            gameActive = false;
+            cancelAnimationFrame(gameLoop);
+            clearInterval(enemyInterval);
+            clearInterval(powerupInterval);
+            clearInterval(coinInterval);
+            
+            finalScoreElement.textContent = score;
+            finalCoinsElement.textContent = coins;
+            
+            gameOverScreen.classList.remove('hidden');
+        }
+        
+        // विंडो रीसाइज़ हैंडल करें
+        window.addEventListener('resize', () => {
+            if (gameActive) {
+                player.style.left = `${playerPosition}%`;
+            }
+        });
+    </script>
+</body>
+</html>
